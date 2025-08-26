@@ -50,7 +50,7 @@ A modern, responsive transaction management application built with Next.js, Supa
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/green-street.git
+git clone https://github.com/PIliev24/green-street
 cd green-street
 ```
 
