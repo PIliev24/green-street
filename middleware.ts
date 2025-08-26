@@ -19,8 +19,20 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   const publicRoutes: string[] = [ROUTES.LOGIN];
-
   const isPublicRoute = publicRoutes.includes(pathname);
+  const isApiRoute = pathname.startsWith("/api/");
+
+  if (isApiRoute && !session) {
+    return NextResponse.json(
+      { error: "Unauthorized - Valid session required" },
+      {
+        status: 401,
+        headers: {
+          "WWW-Authenticate": 'Bearer realm="API"',
+        },
+      }
+    );
+  }
 
   if (!session && !isPublicRoute) {
     const redirectUrl = req.nextUrl.clone();

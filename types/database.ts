@@ -82,7 +82,7 @@ export type TransactionRelationships = [
     isOneToOne: false;
     referencedRelation: "contractors";
     referencedColumns: ["id"];
-  },
+  }
 ];
 
 export type TransactionTable = {
@@ -111,6 +111,12 @@ export type DatabaseEnums = {
 
 export type DatabaseCompositeTypes = {
   [_ in never]: never;
+};
+
+// Extended types for joined queries
+export type TransactionWithContractorDetails = TransactionRow & {
+  contractor_from: ContractorRow;
+  contractor_to: ContractorRow;
 };
 
 export type Database = {

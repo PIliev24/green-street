@@ -2,17 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase";
-import {
-  Transaction,
-  CreateTransactionSchema,
-  UpdateTransactionStateSchema,
-  TransactionWithContractors,
-} from "@/types/domain";
+import { CreateTransactionSchema, UpdateTransactionStateSchema } from "@/types/domain";
+import { TransactionRow, TransactionWithContractorDetails } from "@/types/database";
 import { ROUTES } from "@/utils/constants";
-import { z } from "zod";
 
 export async function getTransactions(): Promise<{
-  data: TransactionWithContractors[] | null;
+  data: TransactionWithContractorDetails[] | null;
   error: string | null;
 }> {
   const supabase = await createClient();
@@ -36,13 +31,13 @@ export async function getTransactions(): Promise<{
   }
 
   return {
-    data: data as TransactionWithContractors[],
+    data: data as TransactionWithContractorDetails[],
     error: null,
   };
 }
 
 export async function getTransactionById(id: string): Promise<{
-  data: TransactionWithContractors | null;
+  data: TransactionWithContractorDetails | null;
   error: string | null;
 }> {
   const supabase = await createClient();
@@ -67,12 +62,16 @@ export async function getTransactionById(id: string): Promise<{
   }
 
   return {
-    data: data as TransactionWithContractors,
+    data: data as TransactionWithContractorDetails,
     error: null,
   };
 }
 
-export async function createTransaction(formData: FormData) {
+export async function createTransaction(formData: FormData): Promise<{
+  data: TransactionRow | null;
+  error: string | null;
+  errors?: Record<string, string[]>;
+}> {
   const rawFormData = {
     account_from: formData.get("account_from") as string,
     account_to: formData.get("account_to") as string,
@@ -85,6 +84,8 @@ export async function createTransaction(formData: FormData) {
   if (!validatedFields.success) {
     const fieldErrors = validatedFields.error.flatten();
     return {
+      data: null,
+      error: "Validation failed",
       errors: fieldErrors.fieldErrors,
     };
   }
@@ -94,6 +95,8 @@ export async function createTransaction(formData: FormData) {
   // Prevent self-transactions
   if (account_from === account_to) {
     return {
+      data: null,
+      error: "Invalid transaction",
       errors: {
         account_to: ["Cannot send money to the same person"],
       },
@@ -115,9 +118,8 @@ export async function createTransaction(formData: FormData) {
 
   if (error) {
     return {
-      errors: {
-        general: [error.message],
-      },
+      data: null,
+      error: error.message,
     };
   }
 
@@ -125,12 +127,16 @@ export async function createTransaction(formData: FormData) {
   revalidatePath(ROUTES.TRANSACTIONS);
 
   return {
-    data: data as Transaction,
-    errors: null,
+    data: data as TransactionRow,
+    error: null,
   };
 }
 
-export async function updateTransactionState(formData: FormData) {
+export async function updateTransactionState(formData: FormData): Promise<{
+  data: TransactionRow | null;
+  error: string | null;
+  errors?: Record<string, string[]>;
+}> {
   const rawFormData = {
     id: formData.get("id") as string,
     state: formData.get("state") as string,
@@ -139,8 +145,11 @@ export async function updateTransactionState(formData: FormData) {
   const validatedFields = UpdateTransactionStateSchema.safeParse(rawFormData);
 
   if (!validatedFields.success) {
+    const fieldErrors = validatedFields.error.flatten();
     return {
-      errors: z.treeifyError(validatedFields.error),
+      data: null,
+      error: "Validation failed",
+      errors: fieldErrors.fieldErrors,
     };
   }
 
@@ -157,9 +166,8 @@ export async function updateTransactionState(formData: FormData) {
 
   if (error) {
     return {
-      errors: {
-        general: [error.message],
-      },
+      data: null,
+      error: error.message,
     };
   }
 
@@ -168,7 +176,7 @@ export async function updateTransactionState(formData: FormData) {
   revalidatePath(ROUTES.TRANSACTION_DETAILS(validatedFields.data.id));
 
   return {
-    data: data as Transaction,
-    errors: null,
+    data: data as TransactionRow,
+    error: null,
   };
 }

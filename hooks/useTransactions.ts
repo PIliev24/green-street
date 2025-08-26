@@ -1,28 +1,21 @@
 "use client";
 
 import useSWR from "swr";
-import { getTransactions, getTransactionById } from "@/actions/transactions";
+import { transactionsService } from "@/services";
 import { TransactionWithContractors } from "@/types/domain";
+import { SWR_KEYS } from "@/utils/constants";
 
 const transactionsFetcher = async () => {
-  const result = await getTransactions();
-  if (result.error) {
-    throw new Error(result.error);
-  }
-  return result.data;
+  return await transactionsService.getTransactions();
 };
 
-const transactionByIdFetcher = async (id: string) => {
-  const result = await getTransactionById(id);
-  if (result.error) {
-    throw new Error(result.error);
-  }
-  return result.data;
+const transactionFetcher = async (id: string) => {
+  return await transactionsService.getTransactionById(id);
 };
 
 export function useTransactions() {
-  const { data, error, isLoading, mutate } = useSWR<TransactionWithContractors[] | null>(
-    "transactions",
+  const { data, error, isLoading, mutate } = useSWR<TransactionWithContractors[]>(
+    SWR_KEYS.TRANSACTIONS,
     transactionsFetcher
   );
 
@@ -36,9 +29,9 @@ export function useTransactions() {
 }
 
 export function useTransaction(id: string) {
-  const { data, error, isLoading, mutate } = useSWR<TransactionWithContractors | null>(
-    id ? ["transaction", id] : null,
-    () => transactionByIdFetcher(id)
+  const { data, error, isLoading, mutate } = useSWR<TransactionWithContractors>(
+    id ? SWR_KEYS.TRANSACTION_BY_ID(id) : null,
+    () => transactionFetcher(id)
   );
 
   return {
@@ -47,5 +40,12 @@ export function useTransaction(id: string) {
     isError: !!error,
     error: error?.message,
     mutate,
+  };
+}
+
+export function useTransactionActions() {
+  return {
+    createTransaction: transactionsService.createTransaction.bind(transactionsService),
+    updateTransactionState: transactionsService.updateTransactionState.bind(transactionsService),
   };
 }

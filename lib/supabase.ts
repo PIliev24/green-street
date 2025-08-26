@@ -12,7 +12,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
 
-export async function createClient(request?: NextRequest) {
+export async function createClient(request?: NextRequest): Promise<ReturnType<typeof createServerClient<Database>>> {
   if (request) {
     const authHeader = request.headers.get("authorization");
 
@@ -21,9 +21,6 @@ export async function createClient(request?: NextRequest) {
         cookies: {
           getAll() {
             return [];
-          },
-          setAll() {
-            // not needed
           },
         },
         global: {
@@ -34,19 +31,24 @@ export async function createClient(request?: NextRequest) {
       });
     }
 
-    // fallback to cookies for web routes
+    const cookieHeader = request.headers.get("cookie");
+    const requestCookies = cookieHeader
+      ? cookieHeader.split(";").map(cookie => {
+          const [name, value] = cookie.trim().split("=");
+          return { name, value };
+        })
+      : [];
+
     return createServerClient<Database>(supabaseUrl!, supabaseAnonKey!, {
       cookies: {
         getAll() {
-          return request.cookies.getAll();
-        },
-        setAll() {
-          // not needed
+          return requestCookies;
         },
       },
     });
   }
 
+  // Handle Server Component context (no request provided)
   const headersList = await headers();
   const authHeader = headersList.get("authorization");
 
@@ -55,9 +57,6 @@ export async function createClient(request?: NextRequest) {
       cookies: {
         getAll() {
           return [];
-        },
-        setAll() {
-          // not needed
         },
       },
       global: {
@@ -77,8 +76,8 @@ export async function createClient(request?: NextRequest) {
       setAll(cookiesToSet) {
         try {
           cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
-        } catch {
-          // not needed
+        } catch (error) {
+          console.error("Error setting cookies:", error);
         }
       },
     },

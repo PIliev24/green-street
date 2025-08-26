@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ContractorSelect } from "@/components/contractor-select";
-import { createTransaction } from "@/actions/transactions";
+import { useTransactionActions } from "@/hooks/useTransactions";
 import { getFieldError } from "@/utils/form";
 
 interface CreateTransactionFormProps {
@@ -17,6 +17,7 @@ interface CreateTransactionFormProps {
 export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps) {
   const [isPending, startTransition] = useTransition();
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>({});
+  const { createTransaction } = useTransactionActions();
 
   const [accountFrom, setAccountFrom] = useState("");
   const [accountTo, setAccountTo] = useState("");
@@ -29,7 +30,8 @@ export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps)
     }
   };
 
-  const handleSubmit = async (formData: FormData) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     startTransition(async () => {
       setErrors({});
 
@@ -41,12 +43,13 @@ export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps)
         return;
       }
 
-      const result = await createTransaction(formData);
+      try {
+        await createTransaction({
+          account_from: accountFrom,
+          account_to: accountTo,
+          amount: amount,
+        });
 
-      if (result?.errors) {
-        setErrors(result.errors);
-        toast.error("Failed to create transaction");
-      } else {
         setAccountFrom("");
         setAccountTo("");
         setAmount("");
@@ -54,6 +57,15 @@ export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps)
 
         toast.success("Transaction created successfully");
         onSuccess?.();
+      } catch (error: unknown) {
+        if (error && typeof error === "object" && "errors" in error) {
+          setErrors((error as { errors: Record<string, string[]> }).errors);
+        }
+        const message =
+          error && typeof error === "object" && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to create transaction";
+        toast.error(message);
       }
     });
   };
@@ -64,7 +76,7 @@ export function CreateTransactionForm({ onSuccess }: CreateTransactionFormProps)
         <CardTitle>Create New Transaction</CardTitle>
       </CardHeader>
       <CardContent>
-        <form action={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="account_from">From Account</Label>
             <ContractorSelect

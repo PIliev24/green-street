@@ -1,10 +1,10 @@
 "use server";
 
 import { createClient } from "@/lib/supabase";
-import { Contractor } from "@/types/domain";
+import { ContractorRow } from "@/types/database";
 
 export async function getContractors(): Promise<{
-  data: Contractor[] | null;
+  data: ContractorRow[] | null;
   error: string | null;
 }> {
   const supabase = await createClient();
@@ -19,13 +19,13 @@ export async function getContractors(): Promise<{
   }
 
   return {
-    data: data as Contractor[],
+    data: data as ContractorRow[],
     error: null,
   };
 }
 
 export async function searchContractors(query: string): Promise<{
-  data: Contractor[] | null;
+  data: ContractorRow[] | null;
   error: string | null;
 }> {
   const supabase = await createClient();
@@ -45,13 +45,13 @@ export async function searchContractors(query: string): Promise<{
   }
 
   return {
-    data: data as Contractor[],
+    data: data as ContractorRow[],
     error: null,
   };
 }
 
 export async function getContractorById(id: string): Promise<{
-  data: Contractor | null;
+  data: ContractorRow | null;
   error: string | null;
 }> {
   const supabase = await createClient();
@@ -66,7 +66,7 @@ export async function getContractorById(id: string): Promise<{
   }
 
   return {
-    data: data as Contractor,
+    data: data as ContractorRow,
     error: null,
   };
 }
