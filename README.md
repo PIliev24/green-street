@@ -292,15 +292,3 @@ The application maintains strict separation between:
 
 - **Database Types** (`types/database.ts`) - Raw Supabase schema
 - **Domain Types** (`types/domain.ts`) - Validated business logic types
-
-## 📄 License
-
-This project is open source and available under the [MIT License](LICENSE).
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 🐛 Bug Reports
-
-If you encounter any issues, please create an issue on GitHub with detailed information about the problem.
